@@ -1,4 +1,5 @@
 'use strict';
+var _ = require('lodash');
 var request = require('request');
 var util = require('util');
 var JSONbig = require('json-bigint');
@@ -73,8 +74,6 @@ var all = exports.all = function(options, cb) {
                     'Authorization': 'Bearer ' + token, 
                     'Content-Type': 'application/json; charset=utf-8', 
                     'User-Agent': user_agent,
-                    //'Accept-Encoding': 'gzip'
-                    // 'Accept-Encoding': 'gzip,deflate'
                   };
               } catch (e) {
                   console.log( 'Error parsing response to oauth token request');
@@ -91,7 +90,7 @@ var all = exports.all = function(options, cb) {
     }
 };
 
-// returns first vehicle in list
+// returns vehicles in list
 var vehicles = exports.vehicles = function(options, cb) {
   if (!cb) cb = function(data) {/* jshint unused: false */};
 
@@ -100,16 +99,23 @@ var vehicles = exports.vehicles = function(options, cb) {
 
     try { data = JSONbig.parse(body); } catch(err) { return cb(new Error('login failed\nerr: ' + err + '\nbody: ' + body)); }
     if (!util.isArray(data.response)) return cb(new Error('expecting an array from Tesla Motors cloud service'));
-    data = data.response[0];
-    data.id = JSONbig.stringify(data.id);
-    cb((!!data.id) ? data : (new Error('expecting vehicle ID from Tesla Motors cloud service')));
+    data = _.map(data.response, function(d) {
+      return JSONbig.stringify(d.id);
+    });
+    cb((data.length > 0) ? data : (new Error('expecting vehicle IDs from Tesla Motors cloud service')));
   });
 };
 
-// returns ID of first vehicle in list as a string to avoid bigint issues
+// returns ID of all vehicles in list as strings
+exports.get_vids = function(options, cb) {
+  vehicles(options, function(data) {
+    cb(data);
+  });
+};
+
 exports.get_vid = function(options, cb) {
   vehicles(options, function(data) {
-    if (!!data.id) data = data.id; if (!!cb) cb(data);
+    cb(data[0]);
   });
 };
 
