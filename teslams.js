@@ -100,22 +100,36 @@ var vehicles = exports.vehicles = function(options, cb) {
     try { data = JSONbig.parse(body); } catch(err) { return cb(new Error('login failed\nerr: ' + err + '\nbody: ' + body)); }
     if (!util.isArray(data.response)) return cb(new Error('expecting an array from Tesla Motors cloud service'));
     data = _.map(data.response, function(d) {
-      return JSONbig.stringify(d.id);
+      d.id = JSONbig.stringify(d.id);
+      return d;
     });
     cb((data.length > 0) ? data : (new Error('expecting vehicle IDs from Tesla Motors cloud service')));
   });
 };
 
+var vehicle = exports.vehicle = function(options, cb) {
+  vehicles(options, function(data) {
+    cb(_.find(data, function(d) {
+      console.log(d);
+      return d.id == options.vehicle_id;
+    }));
+  });
+};
+
+
 // returns ID of all vehicles in list as strings
 exports.get_vids = function(options, cb) {
   vehicles(options, function(data) {
+    data = _.map(data, function(d) {
+      return d.id;
+    });
     cb(data);
   });
 };
 
 exports.get_vid = function(options, cb) {
   vehicles(options, function(data) {
-    cb(data[0]);
+    cb(data[0].id);
   });
 };
 
